@@ -1,0 +1,22 @@
+# Dataset settings
+train_audio: data/scp/train_no_dev.scp # List file of training audio files.
+train_feat: data/list/train_no_dev.list # List file of training feature files.
+valid_audio: data/scp/dev.scp # List file of validation audio files.
+valid_feat: data/list/dev.list # List file of validation feature files.
+eval_audio: data/scp/eval_mid.scp # List file of evaluation feature files for decoding.
+eval_feat: data/list/eval_mid.list # List file of evaluation feature files for decoding.
+stats: data/stats/train_no_dev.joblib # Path to the file of statistics.
+
+# Feature settings
+feat_names: ["mel"] # Names of auxiliary features.
+use_continuous_f0: false # Whether to use continuous F0.
+
+# Data loader setting
+batch_max_length: 7680 # Length of each audio in batch. Make sure dividable by hop_length.
+batch_size: 16 # Batch size
+num_workers: 1 # Number of workers in Pytorch DataLoader
+pin_memory: true # Whether to pin memory in Pytorch DataLoader
+
+# Other setting
+remove_short_samples: true # Whether to remove samples the length of which are less than batch_max_length
+allow_cache: false # Whether to allow cache in dataset. If true, it requires cpu memory

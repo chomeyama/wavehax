@@ -1,0 +1,10 @@
+# @package _global_
+
+defaults:
+  - _self_
+  - generator: wavehax
+
+hydra:
+  run:
+    dir: ./
+  output_subdir: null

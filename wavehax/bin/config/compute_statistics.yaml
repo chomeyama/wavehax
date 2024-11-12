@@ -1,0 +1,10 @@
+# @package _global_
+
+hydra:
+  run:
+    dir: ./
+  output_subdir: null
+
+filepath_list: data/list/train_no_dev.list # List file of input features.
+save_path: data/stats/train_no_dev.joblib # Path to file to output statistics.
+feat_names: ["f0", "cf0", "lf0", "vuv", "mgc", "map", "bap", "mel"] # Feature names.

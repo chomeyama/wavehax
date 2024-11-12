@@ -1,0 +1,23 @@
+# @package _global_
+
+defaults:
+  - _self_
+  - generator: wavehax
+  - data: jvs
+
+hydra:
+  run:
+    dir: ./
+  output_subdir: null
+
+out_dir: # Path to the directory where checkpoint files are stored and decoding outputs will be saved.
+tag: wav # Subdirectory name where the decoding results will be saved.
+
+ckpt_path: # Path to the checkpoint file of the pre-trained model.
+ckpt_steps: 1000000 # Checkpoint step of the pre-trained model to be used.
+
+num_threads: 4 # Number of CPU threads to use for decoding.
+
+f0_factors: [1.00] # F0 scaling factors.
+
+seed: 100 # Random seed.

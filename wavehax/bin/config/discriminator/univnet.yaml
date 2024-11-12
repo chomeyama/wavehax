@@ -1,0 +1,32 @@
+_target_: wavehax.discriminators.MultiResolutionMultiPeriodDiscriminator
+# Multi-period discriminator related
+periods: [2, 3, 5, 7, 11]
+period_discriminator_params:
+  channels: 32
+  kernel_sizes: [5, 3]
+  downsample_scales: [3, 3, 3, 3, 1]
+  max_downsample_channels: 1024
+  use_weight_norm: true
+  use_spectral_norm: false
+# Multi-resolution discriminator related
+fft_sizes: [1024, 2048, 512]
+hop_sizes: [256, 512, 128]
+win_lengths: [1024, 2048, 512]
+spectral_discriminator_params:
+  window: "hann_window"
+  channels: 32
+  kernel_sizes:
+    - [7, 5]
+    - [5, 3]
+    - [5, 3]
+    - [3, 3]
+    - [3, 3]
+    - [3, 3]
+  strides:
+    - [2, 2]
+    - [2, 1]
+    - [2, 2]
+    - [2, 1]
+    - [2, 2]
+    - [1, 1]
+  use_weight_norm: true

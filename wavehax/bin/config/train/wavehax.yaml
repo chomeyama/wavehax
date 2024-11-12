@@ -1,0 +1,57 @@
+# Interval setting
+discriminator_train_start_steps: 0 # Number of steps to start to train discriminator.
+train_max_steps: 1000000 # Number of pre-training steps.
+save_interval_steps: 100000 # Interval steps to save checkpoint.
+eval_interval_steps: 2000 # Interval steps to evaluate the network.
+log_interval_steps: 2000 # Interval steps to record the training log.
+distributed_training: false # Whether to apply ditributed training.
+resume: # Epoch to resume training.
+load_only_params: false # Whether to load only model parameters.
+
+# Loss balancing coefficients.
+lambda_mel: 45.0
+lambda_reg: 0.0
+lambda_phase: 0.0
+lambda_adv: 1.0
+lambda_fm: 2.0
+
+# Mel-spectral loss setting
+mel_loss:
+  _target_: wavehax.losses.MelSpectralLoss
+  n_fft: 1024
+  hop_length: 256
+  sample_rate: 24000
+  n_mels: 100
+
+# Adversarial loss setting
+adv_loss:
+  _target_: wavehax.losses.AdversarialLoss
+  average_by_discriminators: false
+  loss_type: hinge
+
+# Feature matching loss setting
+fm_loss:
+  _target_: wavehax.losses.FeatureMatchingLoss
+  average_by_layers: false
+
+# Optimizer and scheduler setting
+generator_optimizer:
+  _target_: torch.optim.AdamW
+  lr: 2.0e-4
+  betas: [0.8, 0.9]
+  weight_decay: 0.0
+generator_scheduler:
+  _target_: transformers.get_cosine_schedule_with_warmup
+  num_warmup_steps: 0
+  num_training_steps: ${train.train_max_steps}
+generator_grad_norm: 10
+discriminator_optimizer:
+  _target_: torch.optim.AdamW
+  lr: 2.0e-4
+  betas: [0.8, 0.9]
+  weight_decay: 0.0
+discriminator_scheduler:
+  _target_: transformers.get_cosine_schedule_with_warmup
+  num_warmup_steps: 0
+  num_training_steps: ${train.train_max_steps}
+discriminator_grad_norm: 10

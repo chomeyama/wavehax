@@ -1,0 +1,29 @@
+# @package _global_
+
+hydra:
+  run:
+    dir: ./
+  output_subdir: null
+
+audio_scp: data/scp/all.scp # List file of input wav files.
+in_dir: wav # Directory of input feature files.
+out_dir: hdf5 # Directory to save generated samples.
+feature_format: h5 # Feature format.
+sample_rate: 24000 # Sampling frequency of audio waveforms in Hz.
+spk_info: data/spk_style.yaml # YAML format speaker information.
+spk_idx: -4 # Speaker index of the split path.
+
+# Mel-spectrogram extraction setting.
+n_fft: 1024 # Number of Fourier transform points (FFT size).
+hop_length: 240 # Hop length (frameshift) in samples.
+n_mels: 100 # Number of mel basis.
+fmin: 0 # Minimum frequency in mel basis calculation.
+fmax: 8000 # Maximum frequency in mel basis calculation.
+
+# WORLD feature extraction setting.
+f0_min: 100 # Minimum F0 value.
+f0_max: 1000 # Maximum F0 value.
+shiftms: 10 # Frameshift in ms.
+fft_size: 2048 # Number of Fourier transform points (FFT size).
+mgc_dim: 40 # Number of dimension of mel-generalized cepstrum.
+map_dim: 20 # Number of dimention of mel-cepstral aperiodicity.

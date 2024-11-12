@@ -1,0 +1,16 @@
+# @package _global_
+
+defaults:
+  - _self_
+  - generator: wavehax
+  - discriminator: univnet
+  - train: wavehax
+  - data: jvs
+
+hydra:
+  run:
+    dir: ./
+  output_subdir: null
+
+out_dir: # Directory to output training results.
+seed: 0 # Random seed.

@@ -1,0 +1,13 @@
+__pycache__
+.venv
+.eggs
+*egg-info
+*.wav
+*.h5
+*.pkl
+*.png
+*.out
+*.log
+exp
+local
+events.out.tfevents.*
