@@ -43,10 +43,10 @@ To extract acoustic features and prepare statistics:
 $ cd egs/jvs
 
 # Extract acoustic features like F0 and mel-spectrogram. To customize hyperparameters, edit wavehax/bin/config/extract_features.yaml, or override them from the command line.
-$ wavehax-extract-features audio=data/scp/jvs_all.scp
+$ wavehax-extract-features audio_scp=data/scp/jvs_all.scp
 
 # Compute statistics of the training data. You can adjust hyperparameters in wavehax/bin/config/compute_statistics.yaml.
-$ wavehax-compute-statistics feats=data/scp/train_no_dev.list stats=data/stats/train_no_dev.joblib
+$ wavehax-compute-statistics filepath_list=data/scp/train_no_dev.list save_path=data/stats/train_no_dev.joblib
 ```
 
 ### Training

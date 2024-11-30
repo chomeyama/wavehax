@@ -30,7 +30,7 @@ def main(cfg: DictConfig) -> None:
 
     # Prepare dummy inputs
     num_frames = int(model.sample_rate / model.hop_length * dur_in_sec)
-    cond = torch.randn(1, 100, num_frames)
+    cond = torch.randn(1, model.in_channels, num_frames)
     f0 = torch.ones(1, 1, num_frames)
 
     # Calculate MACs
