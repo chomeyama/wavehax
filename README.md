@@ -46,7 +46,7 @@ $ cd egs/jvs
 $ wavehax-extract-features audio_scp=data/scp/all.scp
 
 # Compute statistics of the training data. You can adjust hyperparameters in wavehax/bin/config/compute_statistics.yaml.
-$ wavehax-compute-statistics filepath_list=data/scp/train_no_dev.list save_path=data/stats/train_no_dev.joblib
+$ wavehax-compute-statistics filepath_list=data/list/train_no_dev.list save_path=data/stats/train_no_dev.joblib
 ```
 
 ### Training
@@ -54,7 +54,7 @@ $ wavehax-compute-statistics filepath_list=data/scp/train_no_dev.list save_path=
 To train the vocoder model:
 ```bash
 # Start training. You can adjust hyperparameters in wavehax/bin/config/decode.yaml. In the paper, the model was trained for 1000K steps to match other models, but Wavehax achieves similar performance with fewer training steps.
-$ wavehax-train generator=wavehax discriminator=univnet train=wavehax train.train_max_steps=500000 data=jvs out_dir=exp/wavehax
+$ wavehax-train generator=wavehax.v1 discriminator=univnet train=wavehax train.train_max_steps=500000 data=jvs out_dir=exp/wavehax
 ```
 
 ### Inference
