@@ -6,3 +6,4 @@ from wavehax.modules.complex import *  # NOQA  # isort: skip
 from wavehax.modules.stft import *  # NOQA  # isort: skipxs
 from wavehax.modules.periodic import *  # NOQA  # isort: skip
 from wavehax.modules.resblock import *  # NOQA  # isort: skip
+from wavehax.modules.decomposer import *  # NOQA  # isort: skip

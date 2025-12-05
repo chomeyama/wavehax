@@ -1,0 +1,14 @@
+_target_: wavehax.generators.MultiScaleWavehaxGenerator
+in_channels: 100
+channels: 64
+mult_channels: 2
+kernel_size: 7
+num_blocks: 8
+decomposer: MultiStream1d
+num_splits: 4
+n_fft: 120
+hop_length: 240
+sample_rate: 24000
+prior_type: "pcph"
+drop_prob: 0.0
+framewise_norm: true

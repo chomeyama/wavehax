@@ -4,8 +4,10 @@
 """Wavehax generator modules."""
 
 from functools import partial
+from typing import List
 
 import torch
+from einops import rearrange
 from torch import Tensor, nn
 
 import wavehax.modules
@@ -330,6 +332,161 @@ class ComplexWavehaxGenerator(nn.Module):
         x = self.stft.inverse(real, imag)
 
         return x, prior
+
+    @torch.inference_mode()
+    def inference(self, cond: Tensor, f0: Tensor) -> Tensor:
+        return self(cond, f0)[0]
+
+
+class MultiScaleWavehaxGenerator(nn.Module):
+    """Multi-scale Wavehax generator module.
+
+    This generator models waveforms using a multi-scale representation of a prior signal.
+    The prior waveform is first decomposed into multiple scales, transformed into time-frequency representations, processed by
+    ConvNeXt-based blocks, and finally synthesized back into a full-scale waveform using the corresponding inverse decomposition.
+    """
+
+    def __init__(
+        self,
+        in_channels: int,
+        channels: int,
+        mult_channels: int,
+        kernel_size: int,
+        num_blocks: int,
+        decomposer: str,
+        num_splits: int,
+        n_fft: int,
+        hop_length: int,
+        sample_rate: int,
+        prior_type: str,
+        drop_prob: float = 0.0,
+        framewise_norm: bool = True,
+    ) -> None:
+        """
+        Initialize the MultiScaleWavehaxGenerator module.
+
+        Args:
+            in_channels (int): Number of conditioning feature channels.
+            channels (int): Number of hidden feature channels.
+            mult_channels (int): Channel expansion multiplier for ConvNeXt blocks.
+            kernel_size (int): Kernel size for ConvNeXt blocks.
+            num_blocks (int): Number of ConvNeXt residual blocks.
+            decomposer (str): Name of the decomposer class used to obtain multi-scale waveform representations.
+            num_splits (int): Number of subscales produced by the decomposition module.
+            n_fft (int): Number of Fourier transform points (FFT size).
+            hop_length (int): Hop length (frameshift) in samples.
+            sample_rate (int): Sampling frequency of input and output waveforms in Hz.
+            prior_type (str): Type of prior waveforms used (default: "pcph").
+            drop_prob (float, optional): Probability of dropping paths for stochastic depth. Default: 0.0.
+            framewise_norm (bool, optional): If True, normalization is performed independently for each time frame.
+        """
+        super().__init__()
+        assert hop_length % num_splits == 0
+        assert n_fft % (hop_length // num_splits) == 0
+
+        self.in_channels = in_channels
+        self.n_fft = n_fft
+        self.n_bins = n_fft // 2 + 1
+        self.hop_length = hop_length
+        self.sample_rate = sample_rate
+
+        # Define signal decomposition module
+        self.num_splits = num_splits
+        self.decomposer = getattr(
+            wavehax.modules,
+            decomposer,
+        )(num_splits)
+
+        # Prior waveform generator
+        self.prior_generator = partial(
+            getattr(wavehax.modules, f"generate_{prior_type}"),
+            hop_length=self.hop_length,
+            sample_rate=sample_rate,
+        )
+
+        # STFT layer
+        self.stft = STFT(n_fft=n_fft, hop_length=hop_length // num_splits)
+
+        # Input projection layers
+        self.cond_proj = nn.Conv1d(
+            in_channels, num_splits * self.n_bins, 7, padding=3, padding_mode="reflect"
+        )
+
+        # Input normalization and projection layers
+        self.input_proj = nn.Conv2d(3 * num_splits, channels, 1, bias=False)
+        self.input_norm = LayerNorm2d(channels, framewise=framewise_norm)
+
+        # ConvNeXt-based residual blocks
+        self.blocks = nn.ModuleList()
+        for _ in range(num_blocks):
+            block = ConvNeXtBlock2d(
+                channels,
+                mult_channels,
+                kernel_size,
+                drop_prob=drop_prob,
+                framewise_norm=framewise_norm,
+                layer_scale_init_value=1 / num_blocks,
+            )
+            self.blocks += [block]
+
+        # Output projection and normalization layers
+        self.output_norm = LayerNorm2d(channels, framewise=framewise_norm)
+        self.output_proj = nn.Conv2d(channels, 2 * num_splits, 1)
+
+        # Initialize weights
+        self.apply(self.init_weights)
+
+    def init_weights(self, m) -> None:
+        if isinstance(m, (nn.Conv1d, nn.Conv2d)):
+            nn.init.trunc_normal_(m.weight, std=0.02)
+            if m.bias is not None:
+                nn.init.constant_(m.bias, 0.0)
+
+    def forward(self, cond: Tensor, f0: Tensor) -> Tensor:
+
+        # Generate prior waveform
+        with torch.no_grad():
+            prior = self.prior_generator(f0)
+
+        # Decompose prior signal
+        priors = self.decomposer.analysis(prior)
+
+        # Compute spectrograms
+        specs = []
+        for p in priors:
+            real, imag = self.stft(p)
+            specs += [real, imag]
+        specs = torch.stack(specs, dim=1)
+
+        # Apply input projection
+        cond = self.cond_proj(cond)
+        cond = rearrange(cond, "b (s f) t -> b s f t", s=self.num_splits)
+
+        # Convert to 2d representation
+        x = torch.cat([cond, specs], dim=1)
+        x = self.input_proj(x)
+        x = self.input_norm(x)
+
+        # Apply residual blocks
+        for f in self.blocks:
+            x = f(x)
+
+        # Apply output projection
+        x = self.output_norm(x)
+        x = self.output_proj(x)
+
+        # Apply iSTFT followed by overlap and add
+        xs = list(x.chunk(2 * self.num_splits, dim=1))
+        ys: List[Tensor] = []
+        for real, imag in zip(xs[:-1:2], xs[1::2]):
+            real, imag = real.squeeze(1), imag.squeeze(1)
+            y = self.stft.inverse(real, imag)
+            ys += [y]
+
+        # Construct the output signal
+        y = self.decomposer.synthesis(ys)
+
+        return y, prior
 
     @torch.inference_mode()
     def inference(self, cond: Tensor, f0: Tensor) -> Tensor:
