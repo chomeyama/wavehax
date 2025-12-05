@@ -9,4 +9,5 @@ hop_length: 240
 sample_rate: 24000
 prior_type: "pcph"
 drop_prob: 0.0
+framewise_norm: false
 init_weights: false

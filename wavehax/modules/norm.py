@@ -73,7 +73,11 @@ class NormLayer(nn.Module):
 
 class LayerNorm1d(NormLayer):
     def __init__(
-        self, channels: int, eps: Optional[float] = 1e-6, affine: Optional[bool] = True
+        self,
+        channels: int,
+        framewise: bool = False,
+        eps: Optional[float] = 1e-6,
+        affine: Optional[bool] = True,
     ) -> None:
         """
         Initialize the LayerNorm1d module.
@@ -84,7 +88,10 @@ class LayerNorm1d(NormLayer):
             affine (bool, optional): If True, this module has learnable affine parameters (default: True).
         """
         super().__init__(channels, eps, affine)
-        self.reduced_dim = [1, 2]
+        if framewise:
+            self.reduced_dim = [1]
+        else:
+            self.reduced_dim = [1, 2]
 
     def forward(self, x: Tensor) -> Tensor:
         """
@@ -178,18 +185,26 @@ class BatchNorm1d(NormLayer):
 
 class LayerNorm2d(NormLayer):
     def __init__(
-        self, channels: int, eps: Optional[float] = 1e-6, affine: Optional[bool] = True
+        self,
+        channels: int,
+        framewise: bool = False,
+        eps: Optional[float] = 1e-6,
+        affine: Optional[bool] = True,
     ) -> None:
         """
         Initialize the LayerNorm2d module.
 
         Args:
             channels (int): Number of input features.
+            framewise (bool, optional): If True, normalization is performed independently for each time frame.
             eps (float, optional): A small constant added to the denominator for numerical stability (default: 1e-6).
             affine (bool, optional): If True, this module has learnable affine parameters (default: True).
         """
         super().__init__(channels, eps, affine)
-        self.reduced_dim = [1, 2, 3]
+        if framewise:
+            self.reduced_dim = [1, 2]
+        else:
+            self.reduced_dim = [1, 2, 3]
 
     def forward(self, x: Tensor) -> Tensor:
         """

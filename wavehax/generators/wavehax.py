@@ -43,6 +43,7 @@ class WavehaxGenerator(nn.Module):
         prior_type: str,
         drop_prob: float = 0.0,
         use_layer_norm: bool = True,
+        framewise_norm: bool = False,
         use_logmag_phase: bool = False,
     ) -> None:
         """
@@ -92,7 +93,7 @@ class WavehaxGenerator(nn.Module):
 
         # Input normalization and projection layers
         self.input_proj = nn.Conv2d(5, channels, 1, bias=False)
-        self.input_norm = LayerNorm2d(channels)
+        self.input_norm = LayerNorm2d(channels, framewise=framewise_norm)
 
         # ConvNeXt-based residual blocks
         self.blocks = nn.ModuleList()
@@ -103,12 +104,13 @@ class WavehaxGenerator(nn.Module):
                 kernel_size,
                 drop_prob=drop_prob,
                 use_layer_norm=use_layer_norm,
+                framewise_norm=framewise_norm,
                 layer_scale_init_value=1 / num_blocks,
             )
             self.blocks += [block]
 
         # Output normalization and projection layers
-        self.output_norm = LayerNorm2d(channels)
+        self.output_norm = LayerNorm2d(channels, framewise=framewise_norm)
         self.output_proj = nn.Conv2d(channels, 2, 1)
 
         self.apply(self.init_weights)
@@ -201,6 +203,7 @@ class ComplexWavehaxGenerator(nn.Module):
         prior_type: str,
         drop_prob: float = 0.0,
         use_layer_norm: bool = True,
+        framewise_norm: bool = False,
         init_weights: bool = False,
     ) -> None:
         """
@@ -251,7 +254,7 @@ class ComplexWavehaxGenerator(nn.Module):
 
         # Input normalization and projection layers
         self.input_proj = ComplexConv2d(3, channels, 1, bias=False)
-        self.input_norm = ComplexLayerNorm2d(channels)
+        self.input_norm = ComplexLayerNorm2d(channels, framewise=framewise_norm)
 
         # ConvNeXt-based residual blocks
         self.blocks = nn.ModuleList()
@@ -262,12 +265,13 @@ class ComplexWavehaxGenerator(nn.Module):
                 kernel_size,
                 drop_prob=drop_prob,
                 use_layer_norm=use_layer_norm,
+                framewise_norm=framewise_norm,
                 layer_scale_init_value=1 / num_blocks,
             )
             self.blocks += [block]
 
         # Output normalization and projection layers
-        self.output_norm = ComplexLayerNorm2d(channels)
+        self.output_norm = ComplexLayerNorm2d(channels, framewise=framewise_norm)
         self.output_proj = ComplexConv2d(channels, 1, 1)
 
         # Apply the standard Wavehax weight initialization, which tends to produce better results.

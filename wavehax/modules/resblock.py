@@ -39,6 +39,7 @@ class ConvNeXtBlock2d(nn.Module):
         kernel_size: int,
         drop_prob: float = 0.0,
         use_layer_norm: bool = True,
+        framewise_norm: bool = True,
         layer_scale_init_value: float = None,
     ) -> None:
         """
@@ -51,6 +52,7 @@ class ConvNeXtBlock2d(nn.Module):
             drop_prob (float, optional): Probability of dropping paths for stochastic depth (default: 0.0).
             use_layer_norm (bool, optional): If True, layer normalization is used; otherwise,
                 batch normalization is applied (default: True).
+            framewise_norm (bool, optional): If True, normalization is performed independently for each time frame.
             layer_scale_init_value (float, optional): Initial value for the learnable layer scale parameter.
                 If None, no scaling is applied (default: None).
         """
@@ -69,7 +71,7 @@ class ConvNeXtBlock2d(nn.Module):
             padding_mode="reflect",
         )
         if use_layer_norm:
-            self.norm = LayerNorm2d(channels)
+            self.norm = LayerNorm2d(channels, framewise=framewise_norm)
         else:
             self.norm = BatchNorm2d(channels)
         self.pwconv1 = nn.Conv2d(channels, channels * mult_channels, 1)
@@ -117,6 +119,7 @@ class ComplexConvNeXtBlock2d(nn.Module):
         kernel_size: int,
         drop_prob: float = 0.0,
         use_layer_norm: bool = True,
+        framewise_norm: bool = True,
         layer_scale_init_value: float = None,
     ) -> None:
         """
@@ -129,6 +132,7 @@ class ComplexConvNeXtBlock2d(nn.Module):
             drop_prob (float, optional): Probability of dropping paths for stochastic depth (default: 0.0).
             use_layer_norm (bool, optional): If True, layer normalization is used; otherwise,
                 batch normalization is applied (default: True).
+            framewise_norm (bool, optional): If True, normalization is performed independently for each time frame.
             layer_scale_init_value (float, optional): Initial value for the learnable layer scale parameter.
                 If None, no scaling is applied (default: None).
         """
@@ -148,7 +152,7 @@ class ComplexConvNeXtBlock2d(nn.Module):
             padding_mode="reflect",
         )
         if use_layer_norm:
-            self.norm = ComplexLayerNorm2d(channels)
+            self.norm = ComplexLayerNorm2d(channels, framewise=framewise_norm)
         else:
             self.norm = ComplexBatchNorm2d(channels)
         self.pwconv1 = ComplexConv2d(channels, channels * mult_channels, 1)
