@@ -1,0 +1,13 @@
+_target_: wavehax.generators.WavehaxGenerator
+in_channels: 100
+channels: 32
+mult_channels: 2
+kernel_size: [15, 7]
+num_blocks: 8
+n_fft: 960
+hop_length: 480
+sample_rate: 48000
+prior_type: "pcph"
+drop_prob: 0.0
+framewise_norm: false
+use_logmag_phase: false
