@@ -341,7 +341,6 @@ class ComplexWavehaxGenerator(nn.Module):
 class MultiScaleWavehaxGenerator(nn.Module):
     """Multi-scale Wavehax generator module.
 
-    This generator models waveforms using a multi-scale representation of a prior signal.
     The prior waveform is first decomposed into multiple scales, transformed into time-frequency representations, processed by
     ConvNeXt-based blocks, and finally synthesized back into a full-scale waveform using the corresponding inverse decomposition.
     """
@@ -392,10 +391,7 @@ class MultiScaleWavehaxGenerator(nn.Module):
 
         # Define signal decomposition module
         self.num_splits = num_splits
-        self.decomposer = getattr(
-            wavehax.modules,
-            decomposer,
-        )(num_splits)
+        self.decomposer = getattr(wavehax.modules, decomposer)(num_splits)
 
         # Prior waveform generator
         self.prior_generator = partial(
@@ -485,9 +481,11 @@ class MultiScaleWavehaxGenerator(nn.Module):
         x = self.output_norm(x)
         x = self.output_proj(x)
 
-        # Apply iSTFT followed by overlap and add
+        # Split into real/imag parts for each sub-signal
         xs = list(x.chunk(2 * self.num_splits, dim=1))
         ys: List[Tensor] = []
+
+        # Apply iSTFT with OLA to each sub-signal’s complex spectrogram
         for real, imag in zip(xs[:-1:2], xs[1::2]):
             real, imag = real.squeeze(1), imag.squeeze(1)
             y = self.stft.inverse(real, imag)
