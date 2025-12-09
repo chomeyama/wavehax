@@ -443,7 +443,17 @@ class MultiScaleWavehaxGenerator(nn.Module):
                 nn.init.constant_(m.bias, 0.0)
 
     def forward(self, cond: Tensor, f0: Tensor) -> Tensor:
+        """
+        Calculate forward propagation.
 
+        Args:
+            cond (Tensor): Conditioning features with shape (batch, in_channels, frames).
+            f0 (Tensor): F0 sequences with shape (batch, 1, frames).
+
+        Returns:
+            Tensor: Generated waveforms with shape (batch, 1, frames * hop_length).
+            Tensor: Generated prior waveforms with shape (batch, 1, frames * hop_length).
+        """
         # Generate prior waveform
         with torch.no_grad():
             prior = self.prior_generator(f0)

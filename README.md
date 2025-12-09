@@ -1,27 +1,26 @@
 # Wavehax
 
-This repository provides the official PyTorch implementation of [Wavehax](https://chomeyama.github.io/wavehax-demo/), an alias-free neural vocoder that combines 2D convolutions with harmonic priors for high-fidelity and robust complex spectrogram estimation.
-
+This repository provides the official PyTorch implementation of [Wavehax](https://chomeyama.github.io/wavehax-demo/), an alias-free neural vocoder that combines 2D convolutions with harmonic priors for high-fidelity and robust complex spectrogram estimation. It also includes an implementation of [Multi-Scale Wavehax](https://www.isca-archive.org/interspeech_2025/yoneyama25_interspeech.pdf), which improves the trade-off between efficiency and audio quality.
 
 ## Environment Setup
 
 To set up the environment, run:
+
 ```bash
 $ cd wavehax
 $ pip install -e .
 ```
-This will install the necessary dependencies in editable mode.
 
+This will install the necessary dependencies in editable mode.
 
 ## Directory structure
 
 - **egs**:
-This directory contains project-specific examples and configurations.
+  This directory contains project-specific examples and configurations.
 - **egs/jvs**:
-An example project using the [Japanese Versatile Speech (JVS) Corpus](https://sites.google.com/site/shinnosuketakamichi/research-topics/jvs_corpus), with speaker- and style-wise fundamental frequency (F0) ranges available at [JVS Corpus F0 Range](https://github.com/chomeyama/JVSCorpusF0Range).
+  An example project using the [Japanese Versatile Speech (JVS) Corpus](https://sites.google.com/site/shinnosuketakamichi/research-topics/jvs_corpus), with speaker- and style-wise fundamental frequency (F0) ranges available at [JVS Corpus F0 Range](https://github.com/chomeyama/JVSCorpusF0Range).
 - **wavehax**:
-The main source code for Wavehax.
-
+  The main source code for Wavehax.
 
 ## Run
 
@@ -34,10 +33,10 @@ Prepare your dataset by creating `.scp` files that define the path to each audio
 During the preprocessing step, list files for the extracted features will be automatically generated (e.g., `egs/jvs/data/list/train_no_dev.list`).
 Ensure that separate `.scp` and `.list` files are available for training, validation, and evaluation datasets.
 
-
 ### Preprocessing
 
 To extract acoustic features and prepare statistics:
+
 ```bash
 # Move to the project directory.
 $ cd egs/jvs
@@ -52,6 +51,7 @@ $ wavehax-compute-statistics filepath_list=data/list/train_no_dev.list save_path
 ### Training
 
 To train the vocoder model:
+
 ```bash
 # Start training. You can adjust hyperparameters in wavehax/bin/config/decode.yaml. In the paper, the model was trained for 1000K steps to match other models, but Wavehax achieves similar performance with fewer training steps.
 $ wavehax-train generator=wavehax.v1 discriminator=univnet train=wavehax train.train_max_steps=500000 data=jvs out_dir=exp/wavehax
@@ -60,6 +60,7 @@ $ wavehax-train generator=wavehax.v1 discriminator=univnet train=wavehax train.t
 ### Inference
 
 To generate speech waveforms using the trained model:
+
 ```bash
 # Perform inference using the trained model. You can adjust hyperparameters in wavehax/bin/config/decode.yaml.
 $ wavehax-decode generator=wavehax data=jvs out_dir=exp/wavehax ckpt_steps=500000
@@ -68,10 +69,10 @@ $ wavehax-decode generator=wavehax data=jvs out_dir=exp/wavehax ckpt_steps=50000
 ### Monitoring training progress
 
 You can monitor the training process using [TensorBoard](https://www.tensorflow.org/tensorboard):
+
 ```bash
 $ tensorboard --logdir exp
 ```
-
 
 ### Pretrained models
 
