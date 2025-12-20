@@ -283,3 +283,104 @@ def generate_pcph_linear_decay(
     harmonics = torch.sum(harmonics, dim=1, keepdim=True)
 
     return harmonics + noise
+
+def generate_pcph_closed_form(
+    f0: Tensor,
+    hop_length: int,
+    sample_rate: int,
+    noise_amplitude: Optional[float] = 0.01,
+    random_init_phase: Optional[bool] = True,
+    power_factor: Optional[float] = 0.1,
+    max_frequency: Optional[float] = None,
+    epsilon: Optional[float] = 1e-6,
+    use_modulo: Optional[bool] = True
+) -> torch.Tensor:
+    """
+    An optimized O(1) generator for Pseudo-Constant-Power Harmonic waveforms.
+    Uses the Dirichlet kernel closed-form identity formula for speed and efficiency.
+    """
+    batch, _, frames = f0.size()
+    device = f0.device
+
+# F0 upsampling
+
+# optionally you could use pchip_upsampler I've prepared. check modules
+# You'd need to import it and simply:
+#     pchip_f0_upsampler = PchipF0UpsamplerTorch(scale_factor=hop_length)
+#     f0_upsampled = pchip_f0_upsampler(f0)
+
+    f0_upsampled = F.interpolate(
+        f0, scale_factor=hop_length, mode='linear', align_corners=False
+    )
+
+    # Preparation
+    total_length = f0_upsampled.shape[-1]
+    noise = torch.randn((batch, 1, total_length), device=device) * noise_amplitude
+    # Return early on silent samples
+    if torch.all(f0 == 0.0):
+        return noise
+
+    # Calculate Phase (Theta)
+    # phase = 2 * pi * integral(f0 / sr)
+    phase_increment = f0_upsampled / sample_rate
+
+    # Randomize initial phase
+    if random_init_phase:
+        init_phase = torch.rand((batch, 1, 1), device=device)
+        # phase_increment[:, :, :1] = phase_increment[:, :, :1] + init_phase # Out of place
+        phase_increment[:, :, :1] += init_phase # In-place
+
+    # Cumsum
+    # Multiplying by 2pi at the end to save ops during the cumsum
+    phase = torch.cumsum(phase_increment.double(), dim=2) * 2.0 * torch.pi
+    if use_modulo:
+        phase = torch.fmod(phase, 2.0 * torch.pi)
+    phase = phase.float()
+
+    # Dynamic harmonic count (N)
+    # N is the max harmonic index before aliasing (Nyquist)
+    # N(t) = floor( MaxFreq / f0(t) )
+    nyquist = sample_rate / 2.0
+    limit_freq = max_frequency if max_frequency is not None else nyquist
+
+    # Zero-Division safety for unvoiced segments
+    safe_f0 = torch.clamp(f0_upsampled, min=1e-5)
+    N = torch.floor(limit_freq / safe_f0)
+
+    # Closed-Form Summation
+    # Sum(sin(k*theta)) = (cos(theta/2) - cos((N + 0.5)*theta)) / (2*sin(theta/2))
+
+    half_phase = phase / 2.0
+    # Numerator: cos(theta/2) - cos((N + 0.5)theta)
+    numerator = torch.cos(half_phase) - torch.cos((N + 0.5) * phase)
+
+    # Denominator: 2 * sin(theta/2)
+    # We need a safe division because sin(theta/2) is 0 at phase = 0, 2pi, etc.
+    denominator = 2.0 * torch.sin(half_phase)
+
+    # Safe Division:
+    # Where denominator is close to 0, the theoretical limit of the sum is 0 (for sine sum).
+    # We use a mask to avoid NaNs.
+    # Note: For Sum of Cosines (Dirichlet), the limit is N. For Sum of Sines, it is 0.
+    not_singular = torch.abs(denominator) > epsilon
+
+    # Initialize harmonics container
+    harmonics = torch.zeros_like(phase)
+
+    # Calculate only where stable
+    harmonics[not_singular] = numerator[not_singular] / denominator[not_singular]
+    # (Where singular, we leave as 0.0, which is correct for sum of sines at phase 0)
+
+    # Amplitude Normalization (Pseudo-Constant-Power)
+    # We calculate this dynamically per sample based on N
+    # Mask out silence/unvoiced regions (where f0 was 0)
+    vuv_mask = (f0_upsampled > 0).float()
+
+    # Power Factor Normalization: amp = P * sqrt(2/N)
+    # We clamp N to 1.0 to prevent sqrt(div/0)
+    amp_scale = power_factor * torch.sqrt(2.0 / torch.clamp(N, min=1.0))
+
+    # Apply masks
+    prior_signal = (harmonics * amp_scale * vuv_mask) + noise
+
+    return prior_signal

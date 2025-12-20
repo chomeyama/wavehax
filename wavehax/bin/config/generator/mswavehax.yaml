@@ -9,6 +9,6 @@ num_splits: 4
 n_fft: 120
 hop_length: 240
 sample_rate: 24000
-prior_type: "pcph"
+prior_type: "pcph_closed_form"
 drop_prob: 0.0
 framewise_norm: true

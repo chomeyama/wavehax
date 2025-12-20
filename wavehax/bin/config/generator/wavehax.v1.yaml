@@ -7,7 +7,7 @@ num_blocks: 8
 n_fft: 480
 hop_length: 240
 sample_rate: 24000
-prior_type: "pcph"
+prior_type: "pcph_closed_form"
 drop_prob: 0.0
 framewise_norm: false
 use_logmag_phase: false
